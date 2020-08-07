@@ -160,6 +160,10 @@ void AFloodPedestrianGameModeBase::Tick(float DeltaTime)
 	}
 }
 
+void AFloodPedestrianGameModeBase::UpdateFolderPath(FString newPath) {
+	SimulationFolder = "Test";
+}
+
 void AFloodPedestrianGameModeBase::StartSimulation()
 {
 	//get simulation path
@@ -329,7 +333,11 @@ void AFloodPedestrianGameModeBase::ClearPedestrians()
 }
 
 void AFloodPedestrianGameModeBase::loadWaterMesh() {
-	std::ifstream objFile("C:/Users/Matt/Documents/RSE/LuisFloodModel/FloodPedestrian/FLAMEGPU-development/examples/FloodPedestrian_SW_stadium/iterations/Zone1/map.obj");
+	//get simulation path
+	FString directory = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
+	FString path = FPaths::Combine(directory, TEXT("../FLAMEGPU-development/examples/FloodPedestrian_SW_stadium/iterations/" + SimulationFolder  + "/map.obj"));
+	const TCHAR* simFolder = *SimulationFolder;
+	std::ifstream objFile(*path);
 	char code;
 	FVector vertex;
 	int32 vertexIndex;

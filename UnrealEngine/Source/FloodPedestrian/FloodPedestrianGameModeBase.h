@@ -74,6 +74,9 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Menu")
 		void Quit();
 
+	UFUNCTION(BlueprintCallable, Category = "Menu")
+		void UpdateFolderPath(FString newPath);
+
 	//HUD
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "HUD", Meta = (BlueprintProtected = "true"))
 		TSubclassOf<class UUserWidget> menuWidgetClass;
