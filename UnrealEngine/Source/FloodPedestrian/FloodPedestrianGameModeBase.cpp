@@ -34,17 +34,6 @@ void AFloodPedestrianGameModeBase::BeginPlay()
 		}
 	}
 
-	// Select correct water map
-	FString waterMapPath = "/Game/SimulationMaps/" + SimulationFolder + "/water_map";
-	const TCHAR* wmp = *waterMapPath;
-	SMMap = LoadObject<UStaticMesh>(nullptr, wmp);
-
-	// Set correct topology
-	FString topographyPath = "/Game/SimulationMaps/" + SimulationFolder + "/map";
-	const TCHAR* tp = *topographyPath;
-	TopographyMesh = LoadObject<UStaticMesh>(nullptr, tp);
-	
-
 	//alloc memory for communication structs
 	pedestrians = (pedestrian_data*)malloc(sizeof(pedestrian_data));
 	floodCells = (flood_data*)malloc(sizeof(flood_data));
@@ -105,22 +94,26 @@ void AFloodPedestrianGameModeBase::BeginPlay()
 	}
 
 
-	//// Spawn water plane
-	//spawnLocation.X = 250.0f;
-	//spawnLocation.Y = 250.0f; //change this to 250.0f to be on top of the map
-	//spawnLocation.Z = 249.5f;
-	//FTransform tempTransform;
-	//tempTransform.SetLocation(spawnLocation);
-	//tempTransform.SetScale3D({ 1.0f, 1.0f, 1.0f});
-	//FRotator rotation = FRotator(0, 90.0, 0);
-	//tempTransform.SetRotation(FQuat(rotation));
-	////map = GetWorld()->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass(), tempTransform, spawnParams);
-	//map = GetWorld()->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass(), tempTransform, spawnParams);
-	//map->GetStaticMeshComponent()->SetStaticMesh(TopographyMesh);
-	//map->GetStaticMeshComponent()->SetCastShadow(false);
-	//map->GetStaticMeshComponent()->SetMaterial(0, waterMaterial); //use this for material
-	//previousDisplacement.Init(0.0f, xmachine_memory_agent_MAX);
 
+	
+	
+}
+
+void AFloodPedestrianGameModeBase::SpawnTopographyAndWater() {
+	// Select correct water map
+	FString waterMapPath = "/Game/SimulationMaps/" + SimulationFolder + "/water_map";
+	const TCHAR* wmp = *waterMapPath;
+	SMMap = LoadObject<UStaticMesh>(nullptr, wmp);
+
+	// Set correct topology
+	FString topographyPath = "/Game/SimulationMaps/" + SimulationFolder + "/map";
+	const TCHAR* tp = *topographyPath;
+	TopographyMesh = LoadObject<UStaticMesh>(nullptr, tp);
+
+	FActorSpawnParameters spawnParams;
+	spawnParams.Owner = this;
+	FRotator spawnRotation = { 0.0f, 0.0f, 0.0f };
+	FVector spawnLocation = { 0.0f, 0.0f, 0.0f };
 
 	// Spawn water plane
 	spawnLocation.X = 250.0f;
@@ -128,7 +121,7 @@ void AFloodPedestrianGameModeBase::BeginPlay()
 	spawnLocation.Z = -0.1f;
 	FTransform tempTransform;
 	tempTransform.SetLocation(spawnLocation);
-	tempTransform.SetScale3D({ 250.0f, -250.0f, 250.0f });
+	tempTransform.SetScale3D({ 250.0f, -250.0f, zScale });
 	FRotator rotation = FRotator(0, 90.0, 0);
 	tempTransform.SetRotation(FQuat(rotation));
 	//map = GetWorld()->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass(), tempTransform, spawnParams);
@@ -140,13 +133,10 @@ void AFloodPedestrianGameModeBase::BeginPlay()
 	// Spawn topography
 	spawnLocation.Z = 0.0f;
 	tempTransform.SetLocation(spawnLocation);
-	tempTransform.SetScale3D({ 1.0f, 1.0f, 1.0f });
+	tempTransform.SetScale3D({ 1.0f, 1.0f, zScale/250.0f });
 	topography = GetWorld()->SpawnActor<AStaticMeshActor>(AStaticMeshActor::StaticClass(), tempTransform, spawnParams);
+	topography->SetMobility(EComponentMobility::Movable);
 	topography->GetStaticMeshComponent()->SetStaticMesh(TopographyMesh);
-	
-
-	//tempTransform.SetRotation(FQuat(FRotator(0, 0, 0)));
-	
 }
 
 void AFloodPedestrianGameModeBase::Tick(float DeltaTime)
@@ -161,11 +151,17 @@ void AFloodPedestrianGameModeBase::Tick(float DeltaTime)
 }
 
 void AFloodPedestrianGameModeBase::UpdateFolderPath(FString newPath) {
-	SimulationFolder = "Test";
+	SimulationFolder = newPath;
+}
+
+void AFloodPedestrianGameModeBase::setZScale(float newZScale) {
+	zScale = newZScale;
 }
 
 void AFloodPedestrianGameModeBase::StartSimulation()
 {
+	SpawnTopographyAndWater();
+
 	//get simulation path
 	FString directory = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
 	// Release_Visualisation\PedestrianNavigation.exe "..\..\examples\FloodPedestrian_SW_stadium\iterations\map.xml"
@@ -223,6 +219,13 @@ void AFloodPedestrianGameModeBase::StopSimulation()
 	CopyMemory((PVOID)optionsBuf, options, sizeof(options_data));
 
 	//reset data
+	if (topography)
+		topography->Destroy();
+	if (waterMesh)
+		waterMesh->Destroy();
+	waterVerts.Empty();
+	waterTris.Empty();
+	initialVertexPositions.Empty();
 	simulationStarted = false;
 	options->quit = 0;
 	memset((PVOID)pedestrianBuf, 0, sizeof(pedestrian_data));
@@ -285,7 +288,7 @@ void AFloodPedestrianGameModeBase::SpawnPedestrians()
 		loc = (loc + glm::vec3(1.0f)) * SCALE;
 			
 		FVector spawnLocation = { loc.y, loc.x, 0.0f};
-		spawnLocation.Z = initialVertexPositions[ix * 128 + iy].Z *250.0f;
+		spawnLocation.Z = initialVertexPositions[ix * 128 + iy].Z *zScale;
 
 		/*FHitResult OutHit;
 		FVector rayStart = { loc.x, loc.y, 1000.0f };
@@ -355,6 +358,7 @@ void AFloodPedestrianGameModeBase::loadWaterMesh() {
 		}
 	}
 
+	waterMesh->waterMeshComponent->ClearAllMeshSections();
 	waterMesh->waterMeshComponent->CreateMeshSection(0, waterVerts, waterTris, TArray<FVector>(), TArray<FVector2D>(), TArray<FColor>(), TArray<FProcMeshTangent>(), true);
 }
 
@@ -363,7 +367,7 @@ void AFloodPedestrianGameModeBase::UpdateWaterLevel()
 	const int32 nbVertices = waterVerts.Num();
 	for (int32 i = 0; i < nbVertices; i++) {
 		// Divide floodCell z by 250 to counteract scaling of water plane - differences in units
-		waterVerts[i].Z = initialVertexPositions[i].Z + floodCells->z[i] / 250.0f;
+		waterVerts[i].Z = initialVertexPositions[i].Z + floodCells->z[i] / zScale;
 	}
 
 	waterMesh->waterMeshComponent->UpdateMeshSection(0, waterVerts, TArray<FVector>(), TArray<FVector2D>(), TArray<FColor>(), TArray<FProcMeshTangent>());

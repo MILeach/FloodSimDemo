@@ -77,6 +77,8 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Menu")
 		void UpdateFolderPath(FString newPath);
 
+	UFUNCTION(BlueprintCallable, Category = "Menu")
+		void setZScale(float newZScale);
 	//HUD
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "HUD", Meta = (BlueprintProtected = "true"))
 		TSubclassOf<class UUserWidget> menuWidgetClass;
@@ -91,6 +93,10 @@ private:
 	TArray<FVector> waterVerts;
 	TArray<int32> waterTris;
 	void loadWaterMesh();
+	void SpawnTopographyAndWater();
+
+	float zScale = 250.0f;
+	
 
 	TArray<FVector> initialVertexPositions;
 	TArray<FVector> pedPositions;
