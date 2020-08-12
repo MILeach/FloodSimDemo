@@ -166,8 +166,17 @@ void AFloodPedestrianGameModeBase::StartSimulation()
 	FString directory = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
 	// Release_Visualisation\PedestrianNavigation.exe "..\..\examples\FloodPedestrian_SW_stadium\iterations\map.xml"
 	FString name = "PedestrianNavigation.bat";
+
+	// Editor uses one less directory level than build
+#if WITH_EDITOR
 	FString path = FPaths::Combine(directory, TEXT("../FLAMEGPU-development/bin/x64/"));
+#else
+	FString path = FPaths::Combine(directory, TEXT("../../FLAMEGPU-development/bin/x64/"));
+#endif
+
 	const TCHAR* simFolder = *SimulationFolder;
+
+	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, path);
 
 	//set simulation started
 	simulationStarted = true;
@@ -235,12 +244,6 @@ void AFloodPedestrianGameModeBase::StopSimulation()
 	ClearPedestrians();
 	FPlatformProcess::CloseProc(handle);
 
-	//restore vertex positions
-	//map->GetStaticMeshComponent()->GetStaticMesh()->RenderData->LODResources[0].VertexBuffers.PositionVertexBuffer.Init(initialVertexPositions);
-	//map->GetStaticMeshComponent()->GetStaticMesh()->RenderData->LODResources[0].VertexBuffers.PositionVertexBuffer.InitRHI();
-	//map->GetStaticMeshComponent()->MarkRenderStateDirty();
-	//map->GetStaticMeshComponent()->MarkRenderDynamicDataDirty();
-	//map->GetStaticMeshComponent()->MarkRenderTransformDirty();
 }
 
 void AFloodPedestrianGameModeBase::Quit()
@@ -263,6 +266,7 @@ void AFloodPedestrianGameModeBase::Communication()
 		CopyMemory(floodCells, floodBuf, sizeof(flood_data));
 		options->lock = 0;
 		CopyMemory((PVOID)optionsBuf, options, sizeof(int));
+		ClearPedestrians();
 		SpawnPedestrians();
 		UpdateWaterLevel();
 	}
@@ -271,7 +275,7 @@ void AFloodPedestrianGameModeBase::Communication()
 void AFloodPedestrianGameModeBase::SpawnPedestrians()
 {
 	//each frame pedestrians are deleted and created again with the new data
-	ClearPedestrians();
+	
 
 	for (int i = 0; i < pedestrians->total; i++)
 	{
@@ -338,7 +342,14 @@ void AFloodPedestrianGameModeBase::ClearPedestrians()
 void AFloodPedestrianGameModeBase::loadWaterMesh() {
 	//get simulation path
 	FString directory = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
+
+	// Windows build uses one extra folder level
+#if WITH_EDITOR
 	FString path = FPaths::Combine(directory, TEXT("../FLAMEGPU-development/examples/FloodPedestrian_SW_stadium/iterations/" + SimulationFolder  + "/map.obj"));
+#else
+	FString path = FPaths::Combine(directory, TEXT("../../FLAMEGPU-development/examples/FloodPedestrian_SW_stadium/iterations/" + SimulationFolder + "/map.obj"));
+#endif
+
 	const TCHAR* simFolder = *SimulationFolder;
 	std::ifstream objFile(*path);
 	char code;
