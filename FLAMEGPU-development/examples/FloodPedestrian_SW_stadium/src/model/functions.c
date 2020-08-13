@@ -3978,13 +3978,13 @@ __FLAME_GPU_INIT_FUNC__ void initCommunication()
 		if (!hPedestrianMapFile) {
 			FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(),
 				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), err, 255, NULL);
-			std::cout << err;
+			std::cout << *err << std::endl;
 		}
 		pedestrianBuf = (LPTSTR)MapViewOfFile(hPedestrianMapFile, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(struct pedestrian_data));
 		if (!pedestrianBuf) {
 			FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(),
 				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), err, 255, NULL);
-			std::cout << err;
+			std::cout << *err << std::endl;
 		}
 	}
 	if (hFloodMapFile == NULL)
@@ -3993,13 +3993,13 @@ __FLAME_GPU_INIT_FUNC__ void initCommunication()
 		if (!hPedestrianMapFile) {
 			FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(),
 				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), err, 255, NULL);
-			std::cout << err;
+			std::cout << *err << std::endl;
 		}
 		floodBuf = (LPTSTR)MapViewOfFile(hFloodMapFile, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(struct flood_data));
 		if (!floodBuf) {
 			FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(),
 				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), err, 255, NULL);
-			std::cout << err;
+			std::cout << *err << std::endl;
 		}
 	}
 	if (hOptionsMapFile == NULL)
@@ -4008,13 +4008,13 @@ __FLAME_GPU_INIT_FUNC__ void initCommunication()
 		if (!hPedestrianMapFile) {
 			FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(),
 				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), err, 255, NULL);
-			std::cout << err;
+			std::cout << *err << std::endl;
 		}
 		optionsBuf = (LPTSTR)MapViewOfFile(hOptionsMapFile, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(struct options_data));
 		if (!optionsBuf) {
 			FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(),
 				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), err, 255, NULL);
-			std::cout << err;
+			std::cout << *err << std::endl;
 		}
 	}
 	if (hPedestrianMapFile == NULL || hFloodMapFile == NULL || hOptionsMapFile == NULL)
