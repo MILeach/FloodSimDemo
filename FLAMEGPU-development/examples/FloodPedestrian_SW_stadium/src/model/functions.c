@@ -3967,21 +3967,55 @@ __FLAME_GPU_INIT_FUNC__ void initCommunication()
 	int xmachine_floodCell_SoA_size = sizeof(xmachine_memory_FloodCell_list);
 	h_floodCell_pipe = (xmachine_memory_FloodCell_list*)malloc(xmachine_floodCell_SoA_size);
 
+	wchar_t err[256];
+	memset(err, 0, 256);
+	
+
 	// map shared memory
 	if (hPedestrianMapFile == NULL)
 	{
 		hPedestrianMapFile = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, pedestrianName);
+		if (!hPedestrianMapFile) {
+			FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(),
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), err, 255, NULL);
+			std::cout << err;
+		}
 		pedestrianBuf = (LPTSTR)MapViewOfFile(hPedestrianMapFile, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(struct pedestrian_data));
+		if (!pedestrianBuf) {
+			FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(),
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), err, 255, NULL);
+			std::cout << err;
+		}
 	}
 	if (hFloodMapFile == NULL)
 	{
 		hFloodMapFile = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, floodName);
+		if (!hPedestrianMapFile) {
+			FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(),
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), err, 255, NULL);
+			std::cout << err;
+		}
 		floodBuf = (LPTSTR)MapViewOfFile(hFloodMapFile, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(struct flood_data));
+		if (!floodBuf) {
+			FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(),
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), err, 255, NULL);
+			std::cout << err;
+		}
 	}
 	if (hOptionsMapFile == NULL)
 	{
 		hOptionsMapFile = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, optionsName);
+		if (!hPedestrianMapFile) {
+			FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(),
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), err, 255, NULL);
+			std::cout << err;
+		}
 		optionsBuf = (LPTSTR)MapViewOfFile(hOptionsMapFile, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(struct options_data));
+		if (!optionsBuf) {
+			FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(),
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), err, 255, NULL);
+			std::cout << err;
+		}
 	}
 	if (hPedestrianMapFile == NULL || hFloodMapFile == NULL || hOptionsMapFile == NULL)
 	{
