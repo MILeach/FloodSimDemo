@@ -37,6 +37,7 @@ void AFloodPedestrianGameModeBase::BeginPlay()
 	//alloc memory for communication structs
 	pedestrians = (pedestrian_data*)malloc(sizeof(pedestrian_data));
 	floodCells = (flood_data*)malloc(sizeof(flood_data));
+	simulationStateData = (simulation_state_data*)malloc(sizeof(simulation_state_data));
 	options = (options_data*)malloc(sizeof(options_data));
 
 	//fill materials array LOD 0
@@ -184,14 +185,16 @@ void AFloodPedestrianGameModeBase::StartSimulation()
 	// initialise memory segments
 	TCHAR pedestrianName[] = TEXT("GraphSizeFileMapping");
 	TCHAR floodName[] = TEXT("PositionFileMapping");
+	TCHAR simulationStateName[] = TEXT("SimulationStateFileMapping");
 	TCHAR optionsName[] = TEXT("OptionsFileMapping");
 
 	// create handles
 	hPedestrianMapFile = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(pedestrian_data), pedestrianName);
 	hFloodMapFile = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(flood_data), floodName);
+	hSimulationStateMapFile = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(simulation_state_data), simulationStateName);
 	hOptionsMapFile = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(options_data), optionsName);
 
-	if (hPedestrianMapFile == NULL || hFloodMapFile == NULL || hOptionsMapFile == NULL)
+	if (hPedestrianMapFile == NULL || hFloodMapFile == NULL || hSimulationStateMapFile == NULL || hOptionsMapFile == NULL)
 	{
 		exit(0);
 	}
@@ -199,6 +202,7 @@ void AFloodPedestrianGameModeBase::StartSimulation()
 	// map buffers
 	pedestrianBuf = (LPTSTR)MapViewOfFile(hPedestrianMapFile, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(pedestrian_data));
 	floodBuf = (LPTSTR)MapViewOfFile(hFloodMapFile, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(flood_data));
+	simulationStateBuf = (LPTSTR)MapViewOfFile(hSimulationStateMapFile, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(simulation_state_data));
 	optionsBuf = (LPTSTR)MapViewOfFile(hOptionsMapFile, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(options_data));
 
 	if (pedestrianBuf == NULL)
@@ -209,6 +213,11 @@ void AFloodPedestrianGameModeBase::StartSimulation()
 	if (floodBuf == NULL)
 	{
 		CloseHandle(hFloodMapFile);
+		exit(0);
+	}
+	if (simulationStateBuf == NULL)
+	{
+		CloseHandle(hSimulationStateMapFile);
 		exit(0);
 	}
 	if (optionsBuf == NULL)
@@ -239,6 +248,7 @@ void AFloodPedestrianGameModeBase::StopSimulation()
 	options->quit = 0;
 	memset((PVOID)pedestrianBuf, 0, sizeof(pedestrian_data));
 	memset((PVOID)floodBuf, 0, sizeof(flood_data));
+	memset((PVOID)simulationStateBuf, 0, sizeof(simulation_state_data));
 	previousDisplacement.Empty();
 	previousDisplacement.Init(0.0f, xmachine_memory_agent_MAX);
 	ClearPedestrians();
@@ -264,6 +274,7 @@ void AFloodPedestrianGameModeBase::Communication()
 	{
 		CopyMemory(pedestrians, pedestrianBuf, sizeof(pedestrian_data));
 		CopyMemory(floodCells, floodBuf, sizeof(flood_data));
+		CopyMemory(simulationStateData, simulationStateBuf, sizeof(simulation_state_data));
 		options->lock = 0;
 		CopyMemory((PVOID)optionsBuf, options, sizeof(int));
 		ClearPedestrians();

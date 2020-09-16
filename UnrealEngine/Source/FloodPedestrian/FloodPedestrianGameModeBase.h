@@ -41,6 +41,20 @@ struct flood_data
 	float z[xmachine_memory_agent_MAX];
 };
 
+// Holds simulation state data from FLAME
+struct simulation_state_data
+{
+	int new_sim_time;
+	int evacuated_population;
+	int awaiting_evacuation_population;
+
+	int count_in_dry;
+	int count_at_low_risk;
+	int count_at_medium_risk;
+	int count_at_high_risk;
+	int count_at_highest_risk;
+};
+
 //simulation options sent to FLAME
 struct options_data
 {
@@ -103,10 +117,11 @@ private:
 
 	//communication
 	FProcHandle handle;
-	HANDLE hPedestrianMapFile, hFloodMapFile, hOptionsMapFile;
-	LPCTSTR pedestrianBuf, floodBuf, optionsBuf;
+	HANDLE hPedestrianMapFile, hFloodMapFile, hSimulationStateMapFile, hOptionsMapFile;
+	LPCTSTR pedestrianBuf, floodBuf, simulationStateBuf, optionsBuf;
 	pedestrian_data* pedestrians;
 	flood_data* floodCells;
+	simulation_state_data* simulationStateData;
 	options_data* options;
 
 	UPROPERTY(EditAnyWhere, Category = "Configuration")

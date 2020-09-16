@@ -69,6 +69,49 @@
 #define PI 3.1415f
 #define RADIANS(x) (PI / 180.0f) * x
 
+//communication with Unreal variables 
+
+//same structs as in Unreal
+struct pedestrian_data
+{
+	int total;
+	int gender[xmachine_memory_agent_MAX];
+	float x[xmachine_memory_agent_MAX];
+	float y[xmachine_memory_agent_MAX];
+	float z[xmachine_memory_agent_MAX];
+	float velX[xmachine_memory_agent_MAX];
+	float velY[xmachine_memory_agent_MAX];
+	float speed[xmachine_memory_agent_MAX];
+	float body_height[xmachine_memory_agent_MAX];
+} pedestrians;
+
+struct flood_data
+{
+	int total;
+	float x[xmachine_memory_FloodCell_MAX];
+	float y[xmachine_memory_FloodCell_MAX];
+	float z[xmachine_memory_FloodCell_MAX];
+} floodCells;
+
+struct simulation_state_data
+{
+	int new_sim_time;
+	int evacuated_population;
+	int awaiting_evacuation_population;
+
+	int count_in_dry;
+	int count_at_low_risk;
+	int count_at_medium_risk;
+	int count_at_high_risk;
+	int count_at_highest_risk;
+} simulationStateData;
+
+struct options_data
+{
+	int lock;
+	int quit;
+} options;
+
 __FLAME_GPU_INIT_FUNC__ void initConstants()
 {
 	// This function assign initial values to DXL, DYL, and dt
@@ -907,29 +950,36 @@ __FLAME_GPU_STEP_FUNC__ void DELTA_T_func()
 	printf("\n\n\n**************************************************************************************\n");
 	printf("**************************************************************************************\n");
 	printf("\nElapsed simulation time = %.3f seconds\tOR\t%.2f minutes\tOR\t%.2f Hours \n", new_sim_time, new_sim_time/60, new_sim_time/3600); //prints simulation time 
+	simulationStateData.new_sim_time = new_sim_time;
 	//printing the total number of pedestrians in each iteration
 	printf("\n****************************** Pedestrian information *******************************\n");
 	
 	//printf(" Number of pedestrians evacuated is   %d \n ", sum_evacuated);
 	
 	printf("Number of evacuated pedestrians so far = %d \n", evacuated_population);
-	
+	simulationStateData.evacuated_population = evacuated_population;
 	printf("Remaining number of pedestrians to evacuate = %d \n", initial_population - evacuated_population);
+	simulationStateData.awaiting_evacuation_population = initial_population - evacuated_population;
 
 	printf("Number of evacuating pedestrians = %d \n", no_pedestrians);
 	//printing the number of hero pedestrians in each iteration
 	//printf("Total number of emergency responders = %d \n", count_heros);
 	////printf("\n****************************** States of pedestrians *******************************\n");
 	//////printing the number of pedestrians in dry zones in each iteration
+	simulationStateData.count_in_dry = count_in_dry;
 	printf("\nTotal number of pedestrians at 'no' risk (HR=0) = %d \n", count_in_dry);
 	////printing the number of alive pedestrians in wet area running to safe haven in each iteration
 	printf("\nTotal number of pedestrians at 'low' risk (0.001<HR<0.75) = %d \n", count_at_low_risk);
+	simulationStateData.count_at_low_risk = count_at_low_risk;
 	////printing the number of dead pedestrians in wet area walking to the safe haven in each iteration
 	printf("\nTotal number of pedestrians at 'medium' risk (0.75<HR<1.5) = %d \n", count_at_medium_risk);
+	simulationStateData.count_at_medium_risk = count_at_medium_risk;
 	////printing the number of dead pedestrians got stuck into water in each iteration
 	printf("\nTotal number of pedestrians at 'high' risk (1.5<HR<2.5) = %d \n", count_at_high_risk);
+	simulationStateData.count_at_high_risk = count_at_high_risk;
 	//printing the number of pedestrians at_highest_risk in floodwater in each iteration
 	printf("\nTotal number of at 'highest' risk (HR>2.5) = %d \n", count_at_highest_risk);
+	simulationStateData.count_at_highest_risk = count_at_highest_risk;
 
 	////printing the number of dead pedestrians got stuck into water in each iteration
 	printf("\nMaximum number of pedestrians at 'low' risk (0.001<HR<0.75) = %d \n", max_at_low_risk);
@@ -1228,45 +1278,18 @@ struct __align__(16) LFVResult
 };
 
 
-//communication with Unreal variables 
 
-//same structs as in Unreal
-struct pedestrian_data
-{
-	int total;
-	int gender[xmachine_memory_agent_MAX];
-	float x[xmachine_memory_agent_MAX];
-	float y[xmachine_memory_agent_MAX];
-	float z[xmachine_memory_agent_MAX];
-	float velX[xmachine_memory_agent_MAX];
-	float velY[xmachine_memory_agent_MAX];
-	float speed[xmachine_memory_agent_MAX];
-	float body_height[xmachine_memory_agent_MAX];
-} pedestrians;
-
-struct flood_data
-{
-	int total;
-	float x[xmachine_memory_FloodCell_MAX];
-	float y[xmachine_memory_FloodCell_MAX];
-	float z[xmachine_memory_FloodCell_MAX];
-} floodCells;
-
-struct options_data
-{
-	int lock;
-	int quit;
-} options;
 
 xmachine_memory_agent_list* h_agents_pipe; //Pointer to agent list on host
 xmachine_memory_FloodCell_list* h_floodCell_pipe; //Pointer to flood cell list on host
 
 //communication variables
-HANDLE hPedestrianMapFile, hFloodMapFile, hOptionsMapFile;
-LPCTSTR pedestrianBuf, floodBuf, optionsBuf;
+HANDLE hPedestrianMapFile, hFloodMapFile, hSimulationStateMapFile, hOptionsMapFile;
+LPCTSTR pedestrianBuf, floodBuf, simulationStateBuf, optionsBuf;
 //names must the same in FLAME and Unreal
 TCHAR pedestrianName[] = TEXT("GraphSizeFileMapping");
 TCHAR floodName[] = TEXT("PositionFileMapping");
+TCHAR simulationStateName[] = TEXT("SimulationStateFileMapping");
 TCHAR optionsName[] = TEXT("OptionsFileMapping");
 
 
@@ -4002,6 +4025,21 @@ __FLAME_GPU_INIT_FUNC__ void initCommunication()
 			std::cout << *err << std::endl;
 		}
 	}
+	if (hSimulationStateMapFile == NULL)
+	{
+		hSimulationStateMapFile = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, simulationStateName);
+		if (!hSimulationStateMapFile) {
+			FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(),
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), err, 255, NULL);
+			std::cout << *err << std::endl;
+		}
+		simulationStateBuf = (LPTSTR)MapViewOfFile(hSimulationStateMapFile, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(struct simulation_state_data));
+		if (!simulationStateBuf) {
+			FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(),
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), err, 255, NULL);
+			std::cout << *err << std::endl;
+		}
+	}
 	if (hOptionsMapFile == NULL)
 	{
 		hOptionsMapFile = OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, optionsName);
@@ -4017,7 +4055,7 @@ __FLAME_GPU_INIT_FUNC__ void initCommunication()
 			std::cout << *err << std::endl;
 		}
 	}
-	if (hPedestrianMapFile == NULL || hFloodMapFile == NULL || hOptionsMapFile == NULL)
+	if (hPedestrianMapFile == NULL || hFloodMapFile == NULL || hSimulationStateMapFile == NULL || hOptionsMapFile == NULL)
 	{
 		printf("Error: shared buffers not set\n");
 		exit(0);
@@ -4067,8 +4105,14 @@ __FLAME_GPU_STEP_FUNC__ void communication()
 			floodCells.z[i] = h_floodCell_pipe->h[i] * 50.0;
 		}
 		CopyMemory((PVOID)floodBuf, &floodCells, sizeof(struct flood_data));
+		
+		// Simulation state data
+		CopyMemory((PVOID)simulationStateBuf, &simulationStateData, sizeof(struct simulation_state_data));
+
+		// All data set - swap mutex
 		options.lock = 1;
 		CopyMemory((PVOID)optionsBuf, &options, sizeof(int));
+
 	}
 }
 
