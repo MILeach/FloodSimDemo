@@ -280,7 +280,35 @@ void AFloodPedestrianGameModeBase::Communication()
 		ClearPedestrians();
 		SpawnPedestrians();
 		UpdateWaterLevel();
+		UpdateHUD();
 	}
+}
+
+void AFloodPedestrianGameModeBase::UpdateHUD()
+{
+	UTextBlock* timeElapsedBlock = dynamic_cast<UTextBlock*>(menuWidget->GetWidgetFromName(FName(TEXT("TimeElapsedBlock"))));
+	timeElapsedBlock->SetText(FText::FromString(FString("Time elapsed: " + FString::FromInt(simulationStateData->new_sim_time))));
+	
+	UTextBlock* evacuatedBlock = dynamic_cast<UTextBlock*>(menuWidget->GetWidgetFromName(FName(TEXT("EvacuatedBlock"))));
+	evacuatedBlock->SetText(FText::FromString(FString("Evacuated: " + FString::FromInt(simulationStateData->evacuated_population))));
+	
+	UTextBlock* toEvacuateBlock = dynamic_cast<UTextBlock*>(menuWidget->GetWidgetFromName(FName(TEXT("ToEvacuateBlock"))));
+	toEvacuateBlock->SetText(FText::FromString(FString("To evacuate: " + FString::FromInt(simulationStateData->awaiting_evacuation_population))));
+	
+	UTextBlock* dryBlock = dynamic_cast<UTextBlock*>(menuWidget->GetWidgetFromName(FName(TEXT("DryBlock"))));
+	dryBlock->SetText(FText::FromString(FString("Dry: " + FString::FromInt(simulationStateData->count_in_dry))));
+	
+	UTextBlock* lowRiskBlock = dynamic_cast<UTextBlock*>(menuWidget->GetWidgetFromName(FName(TEXT("LowRiskBlock"))));
+	lowRiskBlock->SetText(FText::FromString(FString("Low risk: " + FString::FromInt(simulationStateData->count_at_low_risk))));
+	
+	UTextBlock* mediumRiskBlock = dynamic_cast<UTextBlock*>(menuWidget->GetWidgetFromName(FName(TEXT("MediumRiskBlock"))));
+	mediumRiskBlock->SetText(FText::FromString(FString("Medium risk: " + FString::FromInt(simulationStateData->count_at_medium_risk))));
+	
+	UTextBlock* highRiskBlock = dynamic_cast<UTextBlock*>(menuWidget->GetWidgetFromName(FName(TEXT("HighRiskBlock"))));
+	highRiskBlock->SetText(FText::FromString(FString("High risk: " + FString::FromInt(simulationStateData->count_at_high_risk))));
+	
+	UTextBlock* maxRiskBlock = dynamic_cast<UTextBlock*>(menuWidget->GetWidgetFromName(FName(TEXT("MaxRiskBlock"))));
+	maxRiskBlock->SetText(FText::FromString(FString("Max risk: " + FString::FromInt(simulationStateData->count_at_highest_risk))));
 }
 
 void AFloodPedestrianGameModeBase::SpawnPedestrians()

@@ -9,6 +9,7 @@
 #include "WaterMesh.h"
 #include "ProceduralMeshComponent.h"
 #include "Engine/StaticMeshActor.h"
+#include "Components/TextBlock.h"
 #include "FloodPedestrianGameModeBase.generated.h"
 
 
@@ -204,5 +205,6 @@ private:
 	void SpawnPedestrians();
 	void ClearPedestrians();
 	void UpdateWaterLevel();
+	void UpdateHUD();
 	
 };
